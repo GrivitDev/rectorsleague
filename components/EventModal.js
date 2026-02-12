@@ -1,44 +1,24 @@
 "use client";
-import { useState, useEffect } from "react";
-
-/**
- * @typedef {Object} Props
- * @property {string} type
- * @property {string} teamA
- * @property {string} teamB
- * @property {(data: any) => void} onSubmit
- * @property {() => void} onClose
- */
+import { useState } from "react";
 
 export default function EventModal({ type, teamA, teamB, onSubmit, onClose }) {
-  const [team, setTeam] = useState(teamA || teamB);
+  const [team, setTeam] = useState(teamA);
   const [player, setPlayer] = useState("");
   const [assist, setAssist] = useState("");
-  const [goalType, setGoalType] = useState<"Open Play" | "Penalty" | "Free Kick" | "Own Goal">("Open Play");
+  const [goalType, setGoalType] = useState("Open Play");
   const [foulType, setFoulType] = useState("Rough Tackle");
-  const [card, setCard] = useState<"None" | "Yellow" | "Red">("None");
-
-  useEffect(() => setTeam(teamA || teamB), [teamA, teamB]);
+  const [card, setCard] = useState("None");
 
   const handleSubmit = () => {
-    if (!team || !player.trim()) {
-      alert("Please select a team and enter a player name.");
-      return;
-    }
-
-    const payload = { type, team, player };
-
-    if (type === "Goal") {
-      payload.assist = assist || undefined;
-      payload.goalType = goalType;
-    }
-
-    if (type === "Foul") {
-      payload.foulType = foulType;
-      payload.card = card;
-    }
-
-    onSubmit(payload);
+    onSubmit({
+      type,
+      team,
+      player,
+      assist: type === "Goal" ? assist : "",
+      goalType: type === "Goal" ? goalType : "",
+      foulType: type === "Foul" ? foulType : "",
+      card: type === "Foul" ? card : "",
+    });
   };
 
   return (
@@ -48,8 +28,8 @@ export default function EventModal({ type, teamA, teamB, onSubmit, onClose }) {
 
         <label>Team</label>
         <select value={team} onChange={(e) => setTeam(e.target.value)}>
-          <option value={teamA}>{teamA}</option>
-          <option value={teamB}>{teamB}</option>
+          <option>{teamA}</option>
+          <option>{teamB}</option>
         </select>
 
         <br /><br />
@@ -57,6 +37,7 @@ export default function EventModal({ type, teamA, teamB, onSubmit, onClose }) {
         <label>Player</label>
         <input value={player} onChange={(e) => setPlayer(e.target.value)} />
 
+        {/* GOAL OPTIONS */}
         {type === "Goal" && (
           <>
             <br /><br />
@@ -74,6 +55,7 @@ export default function EventModal({ type, teamA, teamB, onSubmit, onClose }) {
           </>
         )}
 
+        {/* FOUL OPTIONS */}
         {type === "Foul" && (
           <>
             <br /><br />

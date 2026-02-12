@@ -2,26 +2,23 @@
 import { useState, useEffect, useRef } from "react";
 import { formatTime } from "../utils/formatTime";
 
-/**
- * @param {{ onTimeUpdate: (seconds: number) => void }} props
- */
 export default function Timer({ onTimeUpdate }) {
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
-
-  // Use useRef to store the interval ID
   const intervalRef = useRef(null);
 
+  // Handle interval
   useEffect(() => {
     if (running) {
-      intervalRef.current = setInterval(() => setSeconds(prev => prev + 1), 1000);
+      intervalRef.current = setInterval(() => {
+        setSeconds(prev => prev + 1);
+      }, 1000);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    };
+
+    return () => clearInterval(intervalRef.current);
   }, [running]);
 
+  // 🔥 SAFE: Notify parent when seconds changes
   useEffect(() => {
     onTimeUpdate(seconds);
   }, [seconds, onTimeUpdate]);
@@ -29,16 +26,23 @@ export default function Timer({ onTimeUpdate }) {
   const handleReset = () => {
     setRunning(false);
     setSeconds(0);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = null;
   };
 
   return (
     <div>
       <h2>Match Timer: {formatTime(seconds)}</h2>
-      <button onClick={() => setRunning(true)}>Start</button>
-      <button onClick={() => setRunning(false)}>Pause</button>
-      <button onClick={handleReset}>Reset</button>
+
+      <button onClick={() => setRunning(true)}>
+        Start
+      </button>
+
+      <button onClick={() => setRunning(false)}>
+        Pause
+      </button>
+
+      <button onClick={handleReset}>
+        Reset
+      </button>
     </div>
   );
 }

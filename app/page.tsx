@@ -10,9 +10,9 @@ import MatchStats from "../components/MatchStats";
 import { formatTime } from "../utils/formatTime";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { v4 as uuidv4 } from "uuid";
 
 /* ================= TYPES ================= */
+
 type Team = {
   name: string;
   P: number;
@@ -26,7 +26,6 @@ type Team = {
 };
 
 export type GoalEvent = {
-  id: string;
   type: "Goal";
   team: string;
   player: string;
@@ -36,7 +35,6 @@ export type GoalEvent = {
 };
 
 export type FoulEvent = {
-  id: string;
   type: "Foul";
   team: string;
   player: string;
@@ -46,7 +44,6 @@ export type FoulEvent = {
 };
 
 export type KickEvent = {
-  id: string;
   type: "Corner Kick" | "Goal Kick";
   team: string;
   player: string;
@@ -56,7 +53,9 @@ export type KickEvent = {
 export type EventType = GoalEvent | FoulEvent | KickEvent;
 
 /* ================= STATIC DATA ================= */
+
 const teamsList = ["Bison FC", "Bidan FC", "BIM FC", "BIYELU FC", "BIFES FC"];
+
 const initialTeams: Team[] = teamsList.map((team) => ({
   name: team,
   P: 0,
@@ -70,79 +69,86 @@ const initialTeams: Team[] = teamsList.map((team) => ({
 }));
 
 /* ================= COMPONENT ================= */
+
 export default function Home() {
+  /* ========= LEAGUE STATE ========= */
   const [leagueTable, setLeagueTable] = useState<Team[]>(() => {
-    try {
-      const saved = typeof window !== "undefined" ? localStorage.getItem("leagueTable") : null;
-      return saved ? JSON.parse(saved) : initialTeams;
-    } catch {
-      return initialTeams;
-    }
+    const saved = typeof window !== "undefined"
+      ? localStorage.getItem("leagueTable")
+      : null;
+    return saved ? JSON.parse(saved) : initialTeams;
   });
 
+  /* ========= MATCH SETUP ========= */
   const [teamA, setTeamA] = useState("");
   const [teamB, setTeamB] = useState("");
   const [matchStarted, setMatchStarted] = useState(false);
   const [matchEnded, setMatchEnded] = useState(false);
 
+  /* ========= MATCH STATE ========= */
   const [events, setEvents] = useState<EventType[]>([]);
   const [currentTime, setCurrentTime] = useState(0);
   const [modalType, setModalType] = useState<string | null>(null);
 
+  /* ========= DERIVED SCORES ========= */
   const scoreA = events.filter(e => e.type === "Goal" && e.team === teamA).length;
   const scoreB = events.filter(e => e.type === "Goal" && e.team === teamB).length;
 
   /* ========= EFFECTS ========= */
+  // Persist league table
   useEffect(() => {
-    try {
-      localStorage.setItem("leagueTable", JSON.stringify(leagueTable));
-    } catch {}
+    localStorage.setItem("leagueTable", JSON.stringify(leagueTable));
   }, [leagueTable]);
 
+  // Persist current match state
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        "currentMatch",
-        JSON.stringify({ teamA, teamB, scoreA, scoreB, events, matchStarted })
-      );
-    } catch {}
+    localStorage.setItem(
+      "currentMatch",
+      JSON.stringify({ teamA, teamB, scoreA, scoreB, events, matchStarted })
+    );
   }, [teamA, teamB, scoreA, scoreB, events, matchStarted]);
 
   /* ========= HANDLERS ========= */
-  const handleAddEvent = (data: Omit<EventType, "time" | "id"> & Partial<EventType>) => {
-    const newEvent = {
-      ...data,
-      id: uuidv4(),
-      time: formatTime(currentTime),
-    } as EventType;
-    setEvents(prev => [...prev, newEvent]);
+  const handleAddEvent = (data: Omit<EventType, "time">) => {
+    const newEvent = { ...data, time: formatTime(currentTime) } as EventType;
+    setEvents((prev) => [...prev, newEvent]);
     setModalType(null);
   };
 
   const updateLeague = () => {
-    if (matchEnded || !teamA || !teamB) return;
+    if (matchEnded) return;
 
-    const updated = leagueTable.map(team => {
-      if (team.name !== teamA && team.name !== teamB) return team;
+    const updated = leagueTable.map((team) => {
+      if (team.name === teamA || team.name === teamB) {
+        const isA = team.name === teamA;
+        const goalsFor = isA ? scoreA : scoreB;
+        const goalsAgainst = isA ? scoreB : scoreA;
+        const t = { ...team };
 
-      const isA = team.name === teamA;
-      const gf = isA ? scoreA : scoreB;
-      const ga = isA ? scoreB : scoreA;
+        t.P += 1;
+        t.GF += goalsFor;
+        t.GA += goalsAgainst;
 
-      return {
-        ...team,
-        P: team.P + 1,
-        GF: team.GF + gf,
-        GA: team.GA + ga,
-        W: team.W + (gf > ga ? 1 : 0),
-        D: team.D + (gf === ga ? 1 : 0),
-        L: team.L + (gf < ga ? 1 : 0),
-        Pts: team.Pts + (gf > ga ? 3 : gf === ga ? 1 : 0),
-        GD: team.GF + gf - (team.GA + ga),
-      };
+        if (goalsFor > goalsAgainst) {
+          t.W += 1;
+          t.Pts += 3;
+        } else if (goalsFor === goalsAgainst) {
+          t.D += 1;
+          t.Pts += 1;
+        } else {
+          t.L += 1;
+        }
+
+        t.GD = t.GF - t.GA;
+        return t;
+      }
+      return team;
     });
 
-    updated.sort((a, b) => b.Pts - a.Pts || b.GD - a.GD || b.GF - a.GF);
+    updated.sort((a, b) =>
+      b.Pts !== a.Pts ? b.Pts - a.Pts : b.GD !== a.GD ? b.GD - a.GD : b.GF - a.GF
+    );
+
     setLeagueTable(updated);
     setMatchEnded(true);
   };
@@ -151,29 +157,10 @@ export default function Home() {
     const element = document.getElementById("report");
     if (!element) return;
 
-    const canvas = await html2canvas(element, { scale: 2 });
+    const canvas = await html2canvas(element);
     const imgData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    const imgProps = pdf.getImageProperties(imgData);
-    const imgWidth = pageWidth - 20;
-    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-    let heightLeft = imgHeight;
-    const position = 10;
-
-    pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 10, position - heightLeft, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-
+    const pdf = new jsPDF();
+    pdf.addImage(imgData, "PNG", 10, 10, 180, 0);
     pdf.save("match-report.pdf");
   };
 
@@ -194,6 +181,7 @@ export default function Home() {
       {!matchStarted && (
         <div className="border p-5 rounded shadow space-y-4">
           <h2 className="text-xl font-bold">Match Setup</h2>
+
           <div className="mb-4">
             <label htmlFor="teamASelect" className="block font-medium mb-1">Team A</label>
             <select
@@ -203,7 +191,9 @@ export default function Home() {
               onChange={(e) => setTeamA(e.target.value)}
             >
               <option value="">Select Team A</option>
-              {teamsList.map(team => <option key={team} value={team}>{team}</option>)}
+              {teamsList.map((team) => (
+                <option key={team} value={team}>{team}</option>
+              ))}
             </select>
           </div>
 
@@ -216,7 +206,9 @@ export default function Home() {
               onChange={(e) => setTeamB(e.target.value)}
             >
               <option value="">Select Team B</option>
-              {teamsList.map(team => <option key={team} value={team}>{team}</option>)}
+              {teamsList.map((team) => (
+                <option key={team} value={team}>{team}</option>
+              ))}
             </select>
           </div>
 
@@ -241,7 +233,7 @@ export default function Home() {
             <Timer onTimeUpdate={setCurrentTime} />
 
             <div className="flex gap-2 flex-wrap mt-2">
-              {["Goal", "Foul", "Corner Kick", "Goal Kick"].map(type => (
+              {["Goal", "Foul", "Corner Kick", "Goal Kick"].map((type) => (
                 <button
                   key={type}
                   className="bg-indigo-600 text-white px-3 py-1 rounded"
