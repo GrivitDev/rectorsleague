@@ -86,7 +86,7 @@ export default function EventTable({ events }) {
       <br /><br />
 
       {/* ================= GOAL KICKS ================= */}
-      <h2>Goal Kicks</h2>
+      <h2>Free Kicks</h2>
       <table border="1">
         <thead>
           <tr>
