@@ -251,7 +251,7 @@ export default function Home() {
                 className="bg-purple-600 text-white px-3 py-1 rounded"
                 onClick={() => setModalType("Goal Kick")}
               >
-                Add Goal Kick
+                Add Free Kick
               </button>
             </div>
 
