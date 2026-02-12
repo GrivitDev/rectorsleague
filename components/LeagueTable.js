@@ -20,7 +20,7 @@ export default function LeagueTable({ table }) {
         <tbody>
           {table.map((team, index) => (
             <tr key={team.name}>
-              <td>{index + 1}</td>
+              <td>{index + 1}</td>  
               <td>{team.name}</td>
               <td>{team.P}</td>
               <td>{team.W}</td>

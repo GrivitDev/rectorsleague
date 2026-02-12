@@ -1,5 +1,6 @@
-export default function EventTable({ events }) {
+"use client";
 
+export default function EventTable({ events }) {
   const goals = events.filter(e => e.type === "Goal");
   const fouls = events.filter(e => e.type === "Foul");
   const corners = events.filter(e => e.type === "Corner Kick");
@@ -7,10 +8,8 @@ export default function EventTable({ events }) {
 
   return (
     <div>
-
-      {/* ================= GOALS TABLE ================= */}
       <h2>Goals</h2>
-      <table border="1">
+      <table border={1}>
         <thead>
           <tr>
             <th>Time</th>
@@ -21,12 +20,12 @@ export default function EventTable({ events }) {
           </tr>
         </thead>
         <tbody>
-          {goals.map((event, i) => (
-            <tr key={i}>
-              <td>{event.time}&apos;</td>
+          {goals.map(event => (
+            <tr key={event.id}>
+              <td>{event.time}</td>
               <td>{event.team}</td>
               <td>{event.player}</td>
-              <td>{event.assist}</td>
+              <td>{event.assist || "-"}</td>
               <td>{event.goalType}</td>
             </tr>
           ))}
@@ -34,10 +33,8 @@ export default function EventTable({ events }) {
       </table>
 
       <br /><br />
-
-      {/* ================= FOULS TABLE ================= */}
       <h2>Fouls</h2>
-      <table border="1">
+      <table border={1}>
         <thead>
           <tr>
             <th>Time</th>
@@ -48,9 +45,9 @@ export default function EventTable({ events }) {
           </tr>
         </thead>
         <tbody>
-          {fouls.map((event, i) => (
-            <tr key={i}>
-              <td>{event.time}&apos;</td>
+          {fouls.map(event => (
+            <tr key={event.id}>
+              <td>{event.time}</td>
               <td>{event.team}</td>
               <td>{event.player}</td>
               <td>{event.foulType}</td>
@@ -61,10 +58,8 @@ export default function EventTable({ events }) {
       </table>
 
       <br /><br />
-
-      {/* ================= CORNER KICKS ================= */}
       <h2>Corner Kicks</h2>
-      <table border="1">
+      <table border={1}>
         <thead>
           <tr>
             <th>Time</th>
@@ -73,9 +68,9 @@ export default function EventTable({ events }) {
           </tr>
         </thead>
         <tbody>
-          {corners.map((event, i) => (
-            <tr key={i}>
-              <td>{event.time}&apos;</td>
+          {corners.map(event => (
+            <tr key={event.id}>
+              <td>{event.time}</td>
               <td>{event.team}</td>
               <td>{event.player}</td>
             </tr>
@@ -84,10 +79,8 @@ export default function EventTable({ events }) {
       </table>
 
       <br /><br />
-
-      {/* ================= GOAL KICKS ================= */}
-      <h2>Free Kicks</h2>
-      <table border="1">
+      <h2>Goal Kicks</h2>
+      <table border={1}>
         <thead>
           <tr>
             <th>Time</th>
@@ -96,16 +89,15 @@ export default function EventTable({ events }) {
           </tr>
         </thead>
         <tbody>
-          {goalKicks.map((event, i) => (
-            <tr key={i}>
-              <td>{event.time}&apos;</td>
+          {goalKicks.map(event => (
+            <tr key={event.id}>
+              <td>{event.time}</td>
               <td>{event.team}</td>
               <td>{event.player}</td>
             </tr>
           ))}
         </tbody>
       </table>
-
     </div>
   );
 }

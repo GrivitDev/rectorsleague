@@ -1,20 +1,20 @@
-type Card = "Yellow" | "Red";
-
-type EventType = "Goal" | "Foul" | "Corner Kick" | "Penalty Kick";
-
-interface MatchEvent {
+type EventStats = {
+  type: "Goal" | "Foul" | "Corner Kick" | "Goal Kick";
   team: string;
-  type: EventType;
-  card?: Card;
-}
+  player: string;
+  assist?: string;
+  goalType?: string;
+  foulType?: string;
+  card?: "None" | "Yellow" | "Red";
+};
 
-interface MatchStatsProps {
-  events: MatchEvent[];
+interface Props {
+  events: EventStats[];
   teamA: string;
   teamB: string;
 }
 
-export default function MatchStats({ events, teamA, teamB }: MatchStatsProps) {
+export default function MatchStats({ events, teamA, teamB }: Props) {
   const stats = {
     goals: { A: 0, B: 0 },
     fouls: { A: 0, B: 0 },
@@ -22,20 +22,21 @@ export default function MatchStats({ events, teamA, teamB }: MatchStatsProps) {
     red: { A: 0, B: 0 },
     corners: { A: 0, B: 0 },
     freeKicks: { A: 0, B: 0 },
-    penalties: { A: 0, B: 0 },
   };
 
-  events.forEach((e) => {
-    const side = e.team === teamA ? "A" : "B";
+  events.forEach(e => {
+    const side: "A" | "B" = e.team === teamA ? "A" : "B";
 
-    if (e.type === "Goal") stats.goals[side]++;
+    if (e.type === "Goal") {
+      stats.goals[side]++;
+      if (e.goalType === "Free Kick") stats.freeKicks[side]++;
+    }
     if (e.type === "Foul") {
       stats.fouls[side]++;
       if (e.card === "Yellow") stats.yellow[side]++;
       if (e.card === "Red") stats.red[side]++;
     }
     if (e.type === "Corner Kick") stats.corners[side]++;
-    if (e.type === "Penalty Kick") stats.penalties[side]++;
   });
 
   return (
@@ -55,7 +56,7 @@ export default function MatchStats({ events, teamA, teamB }: MatchStatsProps) {
           <tr><td>Yellow Cards</td><td>{stats.yellow.A}</td><td>{stats.yellow.B}</td></tr>
           <tr><td>Red Cards</td><td>{stats.red.A}</td><td>{stats.red.B}</td></tr>
           <tr><td>Corner Kicks</td><td>{stats.corners.A}</td><td>{stats.corners.B}</td></tr>
-          <tr><td>Penalty Kicks</td><td>{stats.penalties.A}</td><td>{stats.penalties.B}</td></tr>
+          <tr><td>Free Kicks</td><td>{stats.freeKicks.A}</td><td>{stats.freeKicks.B}</td></tr>
         </tbody>
       </table>
     </>

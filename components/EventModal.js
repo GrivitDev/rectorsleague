@@ -1,71 +1,82 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+/**
+ * @typedef {Object} Props
+ * @property {string} type
+ * @property {string} teamA
+ * @property {string} teamB
+ * @property {(data: any) => void} onSubmit
+ * @property {() => void} onClose
+ */
 
 export default function EventModal({ type, teamA, teamB, onSubmit, onClose }) {
-  const [team, setTeam] = useState(teamA);
+  const [team, setTeam] = useState(teamA || teamB);
   const [player, setPlayer] = useState("");
   const [assist, setAssist] = useState("");
-  const [goalType, setGoalType] = useState("Open Play");
+  const [goalType, setGoalType] = useState<"Open Play" | "Penalty" | "Free Kick" | "Own Goal">("Open Play");
   const [foulType, setFoulType] = useState("Rough Tackle");
-  const [card, setCard] = useState("None");
-  const [penaltyReason, setPenaltyReason] = useState("Handball");
-  const [scored, setScored] = useState(true);
+  const [card, setCard] = useState<"None" | "Yellow" | "Red">("None");
+
+  useEffect(() => setTeam(teamA || teamB), [teamA, teamB]);
 
   const handleSubmit = () => {
-    if (type === "Penalty Kick") {
-      onSubmit({
-        type,
-        team,
-        player,
-        reason: penaltyReason,
-        scored,
-      });
+    if (!team || !player.trim()) {
+      alert("Please select a team and enter a player name.");
       return;
     }
 
-    onSubmit({
-      type,
-      team,
-      player,
-      assist: type === "Goal" ? assist : "",
-      goalType: type === "Goal" ? goalType : "",
-      foulType: type === "Foul" ? foulType : "",
-      card: type === "Foul" ? card : "",
-    });
+    const payload = { type, team, player };
+
+    if (type === "Goal") {
+      payload.assist = assist || undefined;
+      payload.goalType = goalType;
+    }
+
+    if (type === "Foul") {
+      payload.foulType = foulType;
+      payload.card = card;
+    }
+
+    onSubmit(payload);
   };
 
   return (
     <div className="modal-overlay">
       <div className="modal-box">
-        <h3>{type}</h3>
+        <h3>{type} Event</h3>
 
         <label>Team</label>
         <select value={team} onChange={(e) => setTeam(e.target.value)}>
-          <option>{teamA}</option>
-          <option>{teamB}</option>
+          <option value={teamA}>{teamA}</option>
+          <option value={teamB}>{teamB}</option>
         </select>
+
+        <br /><br />
 
         <label>Player</label>
         <input value={player} onChange={(e) => setPlayer(e.target.value)} />
 
-        {/* GOAL */}
         {type === "Goal" && (
           <>
+            <br /><br />
             <label>Assist</label>
             <input value={assist} onChange={(e) => setAssist(e.target.value)} />
 
+            <br /><br />
             <label>Goal Type</label>
             <select value={goalType} onChange={(e) => setGoalType(e.target.value)}>
               <option>Open Play</option>
+              <option>Penalty</option>
               <option>Free Kick</option>
               <option>Own Goal</option>
             </select>
           </>
         )}
 
-        {/* FOUL */}
         {type === "Foul" && (
           <>
+            <br /><br />
             <label>Foul Type</label>
             <select value={foulType} onChange={(e) => setFoulType(e.target.value)}>
               <option>Rough Tackle</option>
@@ -75,6 +86,7 @@ export default function EventModal({ type, teamA, teamB, onSubmit, onClose }) {
               <option>Obstruction</option>
             </select>
 
+            <br /><br />
             <label>Card</label>
             <select value={card} onChange={(e) => setCard(e.target.value)}>
               <option>None</option>
@@ -84,31 +96,7 @@ export default function EventModal({ type, teamA, teamB, onSubmit, onClose }) {
           </>
         )}
 
-        {/* PENALTY */}
-        {type === "Penalty Kick" && (
-          <>
-            <label>Reason</label>
-            <select
-              value={penaltyReason}
-              onChange={(e) => setPenaltyReason(e.target.value)}
-            >
-              <option>Handball</option>
-              <option>Rough Tackle</option>
-              <option>Dangerous Play</option>
-              <option>Unsporting Conduct</option>
-            </select>
-
-            <label>Result</label>
-            <select
-              value={scored ? "Scored" : "Missed"}
-              onChange={(e) => setScored(e.target.value === "Scored")}
-            >
-              <option>Scored</option>
-              <option>Missed</option>
-            </select>
-          </>
-        )}
-
+        <br /><br />
         <button onClick={handleSubmit}>Confirm</button>
         <button onClick={onClose}>Cancel</button>
       </div>
