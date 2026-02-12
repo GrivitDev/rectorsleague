@@ -9,6 +9,8 @@ import LeagueTable from "../components/LeagueTable";
 import { formatTime } from "../utils/formatTime";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import MatchStats from "../components/MatchStats";
+
 
 // Team type
 type Team = {
@@ -37,8 +39,8 @@ type FoulEvent = {
   type: "Foul";
   team: string;
   player: string;
-  foulType: string;
-  card: "Y" | "R" | "";
+  foulType?: string;
+  card?: "None" | "Yellow" | "Red";
   time: string;
 };
 
@@ -49,7 +51,17 @@ type KickEvent = {
   time: string;
 };
 
-type EventType = GoalEvent | FoulEvent | KickEvent;
+type PenaltyEvent = {
+  type: "Penalty Kick";
+  team: string;
+  player: string;
+  reason: string;
+  scored: boolean;
+  time: string;
+};
+
+
+type EventType = GoalEvent | FoulEvent | KickEvent| PenaltyEvent;
 
 export default function Home() {
   const teamsList = ["Bison FC", "Bidan FC", "BIM FC", "BIYELU FC", "BIFES FC"];
@@ -94,10 +106,15 @@ export default function Home() {
   // Add event
   const handleAddEvent = (data: EventType) => {
     const newEvent = { ...data, time: formatTime(currentTime) };
-    if (data.type === "Goal") {
-      if (data.team === teamA) setScoreA((prev) => prev + 1);
-      else setScoreB((prev) => prev + 1);
-    }
+      if (data.type === "Goal") {
+        if (data.team === teamA) setScoreA((prev) => prev + 1);
+        else setScoreB((prev) => prev + 1);
+      }
+
+      if (data.type === "Penalty Kick" && data.scored) {
+        if (data.team === teamA) setScoreA((prev) => prev + 1);
+        else setScoreB((prev) => prev + 1);
+      }
     setEvents((prev) => [...prev, newEvent]);
     setModalType(null);
   };
@@ -253,9 +270,17 @@ export default function Home() {
               >
                 Add Free Kick
               </button>
+              <button
+                className="bg-orange-600 text-white px-3 py-1 rounded"
+                onClick={() => setModalType("Penalty Kick")}
+              >
+                Add Penalty Kick
+              </button>
+
             </div>
 
             <EventTable events={events} />
+            <MatchStats events={events} teamA={teamA} teamB={teamB} />
 
             <div className="mt-4 space-x-2">
               <button
